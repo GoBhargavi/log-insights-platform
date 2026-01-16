@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+streamlit
+pandas
+requests
+python-multipart
+pydantic
+huggingface-hub==0.11.0
+sentence-transformers==2.2.2
+transformers==4.28.1
+python-dotenv
+numpy
