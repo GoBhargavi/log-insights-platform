@@ -40,8 +40,8 @@ flowchart TD
     UI -->|POST /chat| FastAPI
     FastAPI --> RAG[RAG Service]
     RAG -->|1. Vector Search| VectorStore
-    VectorStore -->|Candidate Logs| Grader[Agent 1: Grader (Ollama)]
-    Grader -->|Filters Irrelevant| Generator[Agent 2: Generator (Ollama)]
+    VectorStore -->|Candidate Logs| Grader[Agent 1: Grader]
+    Grader -->|Filters Irrelevant| Generator[Agent 2: Generator]
     Generator -->|Synthesizes Answer| UI
 ```
 
