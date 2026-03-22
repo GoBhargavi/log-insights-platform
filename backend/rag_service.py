@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 import numpy as np
 from sentence_transformers import SentenceTransformer
+import logging
 try:
     from .models import LogEntry
 except ImportError:
@@ -11,12 +12,13 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class RAGService:
     def __init__(self):
         # Load model name from env or default
         model_name = os.getenv("RAG_MODEL_NAME", "all-MiniLM-L6-v2")
-        print(f"Loading RAG model: {model_name}...")
+        logger.info(f"Loading RAG model: {model_name}...")
         self.model = SentenceTransformer(model_name)
         self.embeddings = None
         self.logs: List[LogEntry] = []
@@ -93,8 +95,14 @@ Answer ONLY with 'YES' or 'NO'."""
             if response.status_code == 200:
                 answer = response.json().get("response", "").strip().upper()
                 return "YES" in answer
+            else:
+                logger.warning(f"Grader received non-200 status: {response.status_code}")
+                return True # Fallback if grader returns error
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Grader Connection Error: Cannot reach Ollama at {ollama_base_url}")
+            return True # Fallback if offline
         except Exception as e:
-            print(f"Grader Error: {e}")
+            logger.error(f"Grader Error: {e}")
             return True # Fallback to permissive if grader fails
             
         return False
@@ -163,8 +171,13 @@ Analysis:"""
                 answer = response.json().get("response", "No response content.")
             else:
                 answer = f"Ollama Error ({response.status_code}): {response.text}"
+                logger.error(f"Generation Agent failed: {answer}")
+        except requests.exceptions.ConnectionError:
+            answer = "Failed to connect to local Ollama. Please ensure `ollama serve` is running."
+            logger.error("Generation Connection Error: " + answer)
         except Exception as e:
-            answer = f"Failed to connect to Ollama: {str(e)}"
+            answer = f"Unexpected error connecting to Ollama: {str(e)}"
+            logger.error(answer)
 
         return {
             "answer": answer,

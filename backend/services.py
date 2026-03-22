@@ -2,10 +2,13 @@ import csv
 import io
 from datetime import datetime
 from typing import List, Optional
+import logging
 try:
     from .models import LogEntry, LogSummary, FilterRequest
 except ImportError:
     from models import LogEntry, LogSummary, FilterRequest
+
+logger = logging.getLogger(__name__)
 
 # Global in-memory store
 _LOG_STORE: List[LogEntry] = []
@@ -57,7 +60,8 @@ def parse_csv_file(file_content: bytes) -> int:
             )
             new_entries.append(entry)
             count += 1
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Skipping malformed row due to error: {e}. Row data: {row}")
             continue # Skip malformed rows for now
             
     _LOG_STORE.extend(new_entries)

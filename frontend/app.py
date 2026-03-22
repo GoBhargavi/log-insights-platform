@@ -77,11 +77,12 @@ if uploaded_file:
             response = requests.post(f"{API_URL}/upload", files=files)
             
             if response.status_code == 200:
-                st.sidebar.success(f"Processed {response.json().get('records_processed')} records.")
+                count = response.json().get('records_processed')
+                st.toast(f"✅ Processed {count} records successfully!", icon="🎉")
             else:
-                st.sidebar.error(f"Error: {response.text}")
+                st.toast(f"❌ Error: {response.text}", icon="🚨")
         except requests.exceptions.ConnectionError:
-            st.sidebar.error("Cannot connect to backend. Is FastAPI running?")
+            st.sidebar.error("🔌 Cannot connect to backend. Is FastAPI running on port 8000?")
 
 # --- PAGE: CHAT ---
 if page == "💬 Chat with Logs":
@@ -120,17 +121,20 @@ if page == "💬 Chat with Logs":
 
                 # Display assistant response
                 with st.chat_message("assistant"):
-                    st.markdown(full_response)
+                    if "Failed to connect to local Ollama" in answer or "Unexpected error" in answer:
+                        st.error(answer)
+                    else:
+                        st.markdown(full_response)
                 
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             else:
-                error_msg = "Sorry, I encountered an error communicating with the backend."
+                error_msg = f"Sorry, the backend returned an error: {chat_resp.status_code}"
                 st.error(error_msg)
                 st.session_state.messages.append({"role": "assistant", "content": error_msg})
         except Exception as e:
             st.error(f"Error: {e}")
         except requests.exceptions.ConnectionError:
-             st.error("Cannot connect to backend.")
+             st.error("🔌 Cannot connect to backend. Please ensure the API is running.")
 
 # --- PAGE: DASHBOARD ---
 elif page == "📊 Dashboard":
@@ -211,7 +215,7 @@ elif page == "📊 Dashboard":
                 else:
                     st.info("No logs match the current filters.")
             else:
-                st.error("Failed to fetch logs.")
+                st.error("Failed to fetch logs. Backend returned an error.")
 
     except requests.exceptions.ConnectionError:
-        st.warning("Waiting for backend connection... Please ensure `uvicorn backend.main:app --reload` is running.")
+        st.warning("🔌 Waiting for backend connection... Please ensure `python backend/main.py` is running.")

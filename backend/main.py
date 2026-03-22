@@ -9,10 +9,39 @@ except ImportError:
     import services
     from rag_service import rag_service
 
+import logging
+import os
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
 #Imported required libraries for Fast API and utility functions from utility files. 
 
 #initializing Fast API
 app = FastAPI(title="Log & Metrics Explorer API")
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting up Log Insights Platform...")
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+    logger.info(f"Configured Ollama URL: {ollama_url}")
+    logger.info(f"Configured Ollama Model: {model}")
+    
+    try:
+        resp = requests.get(ollama_url, timeout=3)
+        if resp.status_code == 200:
+            logger.info("Successfully connected to Ollama service.")
+        else:
+            logger.warning(f"Ollama reachable, but returned status code: {resp.status_code}")
+    except requests.exceptions.ConnectionError:
+        logger.error(f"Failed to connect to Ollama at {ollama_url}. RAG features will return errors.")
+    except Exception as e:
+        logger.error(f"Unexpected error when checking Ollama: {e}")
 
 #Defined API endpoints for file upload, log summary, log filtering, and chat with logs.
 @app.post("/upload")
